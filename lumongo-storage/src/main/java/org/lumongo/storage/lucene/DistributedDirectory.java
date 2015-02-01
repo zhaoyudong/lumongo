@@ -15,6 +15,7 @@ package org.lumongo.storage.lucene;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collection;
 
 import org.apache.lucene.store.BaseDirectory;
@@ -30,8 +31,8 @@ public class DistributedDirectory extends BaseDirectory {
 	protected NosqlDirectory nosqlDirectory;
 	
 	public DistributedDirectory(NosqlDirectory nosqlDirectory) throws IOException {
+		super(new SingleInstanceLockFactory());
 		this.nosqlDirectory = nosqlDirectory;
-		this.setLockFactory(new SingleInstanceLockFactory());
 	}
 	
 	/**
@@ -52,7 +53,12 @@ public class DistributedDirectory extends BaseDirectory {
 		}
 		
 	}
-	
+
+	@Override public void renameFile(String source, String dest) throws IOException {
+		ensureOpen();
+		nosqlDirectory.rename(source,dest);
+	}
+
 	/**
 	 * ignore IOContext
 	 */
@@ -68,17 +74,7 @@ public class DistributedDirectory extends BaseDirectory {
 		ensureOpen();
 		return nosqlDirectory.getFileNames();
 	}
-	
-	@Override
-	public boolean fileExists(String fileName) throws IOException {
-		ensureOpen();
-		try {
-			return fileLength(fileName) >= 0;
-		}
-		catch (IOException e) {
-			return false;
-		}
-	}
+
 	
 	@Override
 	public long fileLength(String fileName) throws IOException {
@@ -94,13 +90,13 @@ public class DistributedDirectory extends BaseDirectory {
 		nosqlDirectory.deleteFile(nosqlFile);
 	}
 	
-	public void copyToFSDirectory(File path) throws IOException {
+	public void copyToFSDirectory(Path path) throws IOException {
 		copyToDirectory(FSDirectory.open(path));
 	}
 	
 	public void copyToDirectory(Directory directory) throws IOException {
 		for (String file : this.listAll()) {
-			this.copy(directory, file, file, IOContext.DEFAULT);
+			this.copyFrom(directory, file, file, IOContext.DEFAULT);
 		}
 	}
 	

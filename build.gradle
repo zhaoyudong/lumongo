@@ -4,22 +4,27 @@ defaultTasks 'eclipse', 'compileProto', 'createDeploy'
 apply plugin: 'java'
 
 subprojects {
+	defaultTasks 'build'
+
 	apply plugin: 'java'
 	apply plugin: 'eclipse'
 	
-	sourceCompatibility = 1.7
-	targetCompatibility = 1.7
+	sourceCompatibility = 1.8
+	targetCompatibility = 1.8
 	
 	version = '0.31-SNAPSHOT'
 	ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 
 	group = 'org.lumongo'
-	
-	
+
+
 	repositories {
-		mavenCentral()		
+		mavenCentral()
+		maven {
+			url 'http://people.apache.org/~anshum/staging_area/lucene-solr-5.0.0-RC1-rev1654615/lucene/maven/'
+		}
 	}
-	
+
 	
 	test {
 		

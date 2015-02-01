@@ -40,13 +40,14 @@ import com.mongodb.DBObject;
 public class MongoFile implements NosqlFile {
 	
 	private final MongoDirectory mongoDirectory;
-	private final String fileName;
+
 	private final int fileNumber;
 	private final int blockSize;
 	
 	private long fileLength;
 	private long lastModified;
-	
+	private String fileName;
+
 	private MongoBlock currentReadBlock;
 	private MongoBlock currentWriteBlock;
 	
@@ -142,7 +143,11 @@ public class MongoFile implements NosqlFile {
 	public String getFileName() {
 		return fileName;
 	}
-	
+
+	@Override public void setFileName(String fileName) {
+		this.fileName = fileName;
+	}
+
 	@Override
 	public long getFileLength() {
 		

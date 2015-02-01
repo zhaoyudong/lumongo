@@ -2,6 +2,7 @@ package org.lumongo.test.storage;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,7 +51,7 @@ public class BasicStorageTest {
 		directory = new DistributedDirectory(new MongoDirectory(mongo, TestHelper.TEST_DATABASE_NAME, STORAGE_TEST_INDEX, false, false));
 		
 		StandardAnalyzer analyzer = new StandardAnalyzer();
-		IndexWriterConfig config = new IndexWriterConfig(Version.LATEST, analyzer);
+		IndexWriterConfig config = new IndexWriterConfig(analyzer);
 		
 		IndexWriter w = new IndexWriter(directory, config);
 		
@@ -147,7 +148,7 @@ public class BasicStorageTest {
 	private static int runQuery(IndexReader indexReader, int count, Query q) throws IOException, CorruptIndexException {
 		long start = System.currentTimeMillis();
 		IndexSearcher searcher = new IndexSearcher(indexReader);
-		TopScoreDocCollector collector = TopScoreDocCollector.create(count, true);
+		TopScoreDocCollector collector = TopScoreDocCollector.create(count);
 		
 		searcher.search(q, collector);
 		ScoreDoc[] hits = collector.topDocs().scoreDocs;
@@ -180,7 +181,7 @@ public class BasicStorageTest {
 			Directory directory = new DistributedDirectory(new MongoDirectory(mongo, databaseName, STORAGE_TEST_INDEX));
 			
 			StandardAnalyzer analyzer = new StandardAnalyzer();
-			IndexWriterConfig config = new IndexWriterConfig(Version.LATEST, analyzer);
+			IndexWriterConfig config = new IndexWriterConfig(analyzer);
 			IndexWriter w = new IndexWriter(directory, config);
 			
 			boolean applyDeletes = true;
@@ -209,8 +210,8 @@ public class BasicStorageTest {
 		{
 			MongoClient mongo = new MongoClient(hostName);
 			DistributedDirectory d = new DistributedDirectory(new MongoDirectory(mongo, databaseName, STORAGE_TEST_INDEX));
-			
-			d.copyToFSDirectory(new File("/tmp/fsdirectory"));
+
+			d.copyToFSDirectory(new File("/tmp/fsdirectory").toPath());
 			
 			d.close();
 		}
