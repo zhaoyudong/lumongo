@@ -98,7 +98,6 @@ public class LumongoSegment {
 	private Long lastChange;
 	private String indexName;
 
-
 	private final Set<String> fetchSet;
 
 	private QueryResultCache queryResultCache;
@@ -108,7 +107,8 @@ public class LumongoSegment {
 
 	private int segmentQueryCacheMaxAmount;
 
-	public LumongoSegment(int segmentNumber, LumongoIndexWriter indexWriter, LumongoDirectoryTaxonomyWriter taxonomyWriter, IndexConfig indexConfig) throws IOException {
+	public LumongoSegment(int segmentNumber, LumongoIndexWriter indexWriter, LumongoDirectoryTaxonomyWriter taxonomyWriter, IndexConfig indexConfig)
+					throws IOException {
 
 		setupQueryCache(indexConfig);
 
@@ -123,7 +123,6 @@ public class LumongoSegment {
 
 		this.indexConfig = indexConfig;
 		this.facetsConfig = getFacetsConfig();
-
 
 		this.uniqueIdField = indexConfig.getUniqueIdField();
 
@@ -150,7 +149,6 @@ public class LumongoSegment {
 			}
 		};
 	}
-
 
 	private void setupQueryCache(IndexConfig indexConfig) {
 		queryCacheEnabled = (indexConfig.getSegmentQueryCacheSize() > 0);

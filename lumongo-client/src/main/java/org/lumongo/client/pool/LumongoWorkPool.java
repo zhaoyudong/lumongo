@@ -78,7 +78,8 @@ public class LumongoWorkPool extends LumongoBaseWorkPool {
 		return executeAsync(createIndex);
 	}
 	
-	public ListenableFuture<CreateIndexResult> createIndexAsync(String indexName, int segments, String uniqueIdField, IndexConfig indexConfig) throws Exception {
+	public ListenableFuture<CreateIndexResult> createIndexAsync(String indexName, int segments, String uniqueIdField, IndexConfig indexConfig)
+					throws Exception {
 		return executeAsync(new CreateIndex(indexName, segments, uniqueIdField, indexConfig));
 	}
 	

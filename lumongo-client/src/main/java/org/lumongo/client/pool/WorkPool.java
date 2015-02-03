@@ -40,11 +40,13 @@ public class WorkPool {
 					throw new RuntimeException(e1);
 				}
 				return true;
-			};
+			}
+
+			;
 		};
 		
-		pool = MoreExecutors.listeningDecorator(new ThreadPoolExecutor(threads, threads, 0L, TimeUnit.MILLISECONDS, workQueue, new LumongoThreadFactory(
-						poolName)));
+		pool = MoreExecutors
+						.listeningDecorator(new ThreadPoolExecutor(threads, threads, 0L, TimeUnit.MILLISECONDS, workQueue, new LumongoThreadFactory(poolName)));
 	}
 	
 	public <T> ListenableFuture<T> executeAsync(Callable<T> task) {

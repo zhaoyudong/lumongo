@@ -50,12 +50,14 @@ public class LumongoQueryParser extends QueryParser {
 	private NumericRangeQuery<?> getNumericOrDateRange(final String fieldName, final String start, final String end, final boolean startInclusive,
 					final boolean endInclusive) {
 		if (indexConfig.isNumericIntField(fieldName)) {
-			return NumericRangeQuery.newIntRange(fieldName, start == null ? null : Integer.parseInt(start), end == null ? null : Integer.parseInt(end),
-							startInclusive, endInclusive);
+			return NumericRangeQuery
+							.newIntRange(fieldName, start == null ? null : Integer.parseInt(start), end == null ? null : Integer.parseInt(end), startInclusive,
+											endInclusive);
 		}
 		else if (indexConfig.isNumericLongField(fieldName)) {
-			return NumericRangeQuery.newLongRange(fieldName, start == null ? null : Long.parseLong(start), end == null ? null : Long.parseLong(end),
-							startInclusive, endInclusive);
+			return NumericRangeQuery
+							.newLongRange(fieldName, start == null ? null : Long.parseLong(start), end == null ? null : Long.parseLong(end), startInclusive,
+											endInclusive);
 		}
 		else if (indexConfig.isNumericFloatField(fieldName)) {
 			return NumericRangeQuery.newFloatRange(fieldName, start == null ? null : Float.parseFloat(start), end == null ? null : Float.parseFloat(end),

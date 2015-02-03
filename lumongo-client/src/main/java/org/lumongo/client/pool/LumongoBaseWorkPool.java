@@ -18,8 +18,8 @@ public class LumongoBaseWorkPool extends WorkPool {
 	private static AtomicInteger counter = new AtomicInteger(0);
 
 	public LumongoBaseWorkPool(LumongoPoolConfig lumongoPoolConfig) throws Exception {
-		this(new LumongoPool(lumongoPoolConfig), lumongoPoolConfig.getPoolName() != null ? lumongoPoolConfig.getPoolName() : "lumongoPool-"
-				+ counter.getAndIncrement());
+		this(new LumongoPool(lumongoPoolConfig),
+						lumongoPoolConfig.getPoolName() != null ? lumongoPoolConfig.getPoolName() : "lumongoPool-" + counter.getAndIncrement());
 	}
 
 	public LumongoBaseWorkPool(LumongoPool lumongoPool) {

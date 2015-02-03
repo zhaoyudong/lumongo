@@ -354,13 +354,9 @@ public class LumongoIndex {
 				hzLock.lock();
 				log.info("Obtained lock for index <" + indexName + "> segment <" + segmentNumber + ">");
 
-
-
 				LumongoIndexWriter indexWriter = getLumongoIndexWriter(segmentNumber);
 
 				LumongoDirectoryTaxonomyWriter taxonomyWriter = getLumongoDirectoryTaxonomyWriter(segmentNumber);
-
-
 
 				LumongoSegment s = new LumongoSegment(segmentNumber, indexWriter, taxonomyWriter, indexConfig);
 				segmentMap.put(segmentNumber, s);

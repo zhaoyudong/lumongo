@@ -21,7 +21,8 @@ public class DateFieldIndexer extends FieldIndexer {
 			d.add(createField((Date) value, indexedFieldName));
 		}
 		else {
-			throw new Exception("Expecting collection of Date or Date for field <" + storedFieldName + "> and found <" + value.getClass().getSimpleName() + ">");
+			throw new Exception(
+							"Expecting collection of Date or Date for field <" + storedFieldName + "> and found <" + value.getClass().getSimpleName() + ">");
 		}
 	}
 	

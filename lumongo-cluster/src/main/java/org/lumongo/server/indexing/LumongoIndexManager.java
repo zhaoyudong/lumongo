@@ -158,8 +158,7 @@ public class LumongoIndexManager {
 			if (master) {
 				// make sure we can resolve it before transfering segments
 				Nodes nodes = ClusterHelper.getNodes(mongoConfig);
-				@SuppressWarnings("unused")
-				LocalNodeConfig localNodeConfig = nodes.find(memberAdded);
+				@SuppressWarnings("unused") LocalNodeConfig localNodeConfig = nodes.find(memberAdded);
 				
 				handleServerAdded(currentMembers, memberAdded);
 			}
@@ -420,7 +419,8 @@ public class LumongoIndexManager {
 		
 	}
 	
-	public IndexSettingsResponse updateIndex(String indexName, IndexSettings request) throws IndexDoesNotExist, InvalidIndexConfig, MongoException, IOException {
+	public IndexSettingsResponse updateIndex(String indexName, IndexSettings request)
+					throws IndexDoesNotExist, InvalidIndexConfig, MongoException, IOException {
 		globalLock.readLock().lock();
 		try {
 			
@@ -494,8 +494,8 @@ public class LumongoIndexManager {
 		}
 	}
 	
-	public DeleteResponse deleteDocument(DeleteRequest deleteRequest) throws IndexDoesNotExist, CorruptIndexException, SegmentDoesNotExist, IOException,
-					Exception {
+	public DeleteResponse deleteDocument(DeleteRequest deleteRequest)
+					throws IndexDoesNotExist, CorruptIndexException, SegmentDoesNotExist, IOException, Exception {
 		globalLock.readLock().lock();
 		try {
 			
@@ -660,7 +660,7 @@ public class LumongoIndexManager {
 				QueryWithFilters queryWithFilters = new QueryWithFilters(query);
 				
 				for (String filter : queryRequest.getFilterQueryList()) {
-					queryWithFilters.addFilterQuery(i.getQuery(filter, Collections.<String> emptyList(), 0, operator));
+					queryWithFilters.addFilterQuery(i.getQuery(filter, Collections.<String>emptyList(), 0, operator));
 				}
 				
 				queryMap.put(indexName, queryWithFilters);
@@ -887,8 +887,7 @@ public class LumongoIndexManager {
 			};
 			
 			// nothing in responses currently
-			@SuppressWarnings("unused")
-			List<ClearResponse> responses = federator.send(request);
+			@SuppressWarnings("unused") List<ClearResponse> responses = federator.send(request);
 			
 			return ClearResponse.newBuilder().build();
 		}
@@ -932,8 +931,7 @@ public class LumongoIndexManager {
 			};
 			
 			// nothing in responses currently
-			@SuppressWarnings("unused")
-			List<OptimizeResponse> responses = federator.send(request);
+			@SuppressWarnings("unused") List<OptimizeResponse> responses = federator.send(request);
 			
 			return OptimizeResponse.newBuilder().build();
 		}
@@ -1047,7 +1045,7 @@ public class LumongoIndexManager {
 			String value = null;
 			Long frequency = null;
 			
-			for (int i = 0; (i < amountToReturn) && !terms.isEmpty();) {
+			for (int i = 0; (i < amountToReturn) && !terms.isEmpty(); ) {
 				value = terms.firstKey();
 				AtomicLong docFreq = terms.remove(value);
 				frequency = docFreq.get();
