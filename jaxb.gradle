@@ -52,6 +52,8 @@ class GenerateJaxb extends org.gradle.api.internal.ConventionTask {
 		ant.taskdef(name: 'xjc', classname: 'com.sun.tools.xjc.XJC2Task', classpath: project.configurations.jaxb.asPath)
 		
 		ant.xjc(destdir: outputDir, package: jaxbPackage, schema: schema.absolutePath) {
+			arg(value: '-no-header')
+			arg(value: '-quiet')
 			if (dtd) {
 				arg(value: '-dtd')
 			}
