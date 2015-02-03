@@ -46,7 +46,6 @@ public class BasicStorageTest {
 	
 	@BeforeClass
 	public static void cleanDatabaseAndInit() throws Exception {
-		System.out.println("Cleanup and Init");
 
 		MongoClient mongo = TestHelper.getMongo();
 		mongo.dropDatabase(TestHelper.TEST_DATABASE_NAME);
