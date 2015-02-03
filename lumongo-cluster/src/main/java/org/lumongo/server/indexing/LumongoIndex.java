@@ -288,7 +288,7 @@ public class LumongoIndex {
 		try {
 			Member self = hazelcastManager.getSelf();
 			this.memberToSegmentMap = new HashMap<>();
-			this.memberToSegmentMap.put(self, new HashSet<>());
+			this.memberToSegmentMap.put(self, new HashSet<Integer>());
 			for (int segmentNumber = 0; segmentNumber < numberOfSegments; segmentNumber++) {
 				loadSegment(segmentNumber);
 				this.memberToSegmentMap.get(self).add(segmentNumber);
@@ -594,10 +594,10 @@ public class LumongoIndex {
 			// ensure all members are in the map and contain an empty set
 			for (Member m : currentMembers) {
 				if (!memberToSegmentMap.containsKey(m)) {
-					memberToSegmentMap.put(m, new HashSet<>());
+					memberToSegmentMap.put(m, new HashSet<Integer>());
 				}
 				if (memberToSegmentMap.get(m) == null) {
-					memberToSegmentMap.put(m, new HashSet<>());
+					memberToSegmentMap.put(m, new HashSet<Integer>());
 				}
 			}
 
