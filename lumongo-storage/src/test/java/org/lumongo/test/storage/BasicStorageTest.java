@@ -46,6 +46,8 @@ public class BasicStorageTest {
 	
 	@BeforeClass
 	public static void cleanDatabaseAndInit() throws Exception {
+		System.out.println("Cleanup and Init");
+
 		MongoClient mongo = TestHelper.getMongo();
 		mongo.dropDatabase(TestHelper.TEST_DATABASE_NAME);
 		directory = new DistributedDirectory(new MongoDirectory(mongo, TestHelper.TEST_DATABASE_NAME, STORAGE_TEST_INDEX, false, false));
@@ -83,7 +85,7 @@ public class BasicStorageTest {
 	}
 	
 	@Test
-	public void test2Query() throws CorruptIndexException, ParseException, IOException {
+	public void test2Query() throws ParseException, IOException {
 		IndexReader indexReader = DirectoryReader.open(directory);
 		
 		StandardAnalyzer analyzer = new StandardAnalyzer();
@@ -138,14 +140,14 @@ public class BasicStorageTest {
 		indexReader.close();
 	}
 	
-	private static int runQuery(IndexReader indexReader, QueryParser qp, String queryStr, int count) throws ParseException, CorruptIndexException, IOException {
+	private static int runQuery(IndexReader indexReader, QueryParser qp, String queryStr, int count) throws ParseException, IOException {
 		Query q = qp.parse(queryStr);
 		
 		return runQuery(indexReader, count, q);
 		
 	}
 	
-	private static int runQuery(IndexReader indexReader, int count, Query q) throws IOException, CorruptIndexException {
+	private static int runQuery(IndexReader indexReader, int count, Query q) throws IOException {
 		long start = System.currentTimeMillis();
 		IndexSearcher searcher = new IndexSearcher(indexReader);
 		TopScoreDocCollector collector = TopScoreDocCollector.create(count);
@@ -211,7 +213,10 @@ public class BasicStorageTest {
 			MongoClient mongo = new MongoClient(hostName);
 			DistributedDirectory d = new DistributedDirectory(new MongoDirectory(mongo, databaseName, STORAGE_TEST_INDEX));
 
-			d.copyToFSDirectory(new File("/tmp/fsdirectory").toPath());
+			File f = new File("/tmp/fsdirectory");
+			f.mkdirs();
+
+			d.copyToFSDirectory(f.toPath());
 			
 			d.close();
 		}

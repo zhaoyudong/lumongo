@@ -96,7 +96,7 @@ public class DistributedDirectory extends BaseDirectory {
 	
 	public void copyToDirectory(Directory directory) throws IOException {
 		for (String file : this.listAll()) {
-			this.copyFrom(directory, file, file, IOContext.DEFAULT);
+			directory.copyFrom(this, file, file, IOContext.DEFAULT);
 		}
 	}
 	

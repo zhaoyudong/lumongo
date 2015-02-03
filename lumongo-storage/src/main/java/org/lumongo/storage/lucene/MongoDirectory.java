@@ -2,6 +2,7 @@ package org.lumongo.storage.lucene;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -203,7 +204,7 @@ public class MongoDirectory implements NosqlDirectory {
 	@Override
 	public String[] getFileNames() throws IOException {
 
-		// System.out.println("Get file names");
+
 
 		return nameToFileMap.keySet().toArray(new String[0]);
 	}
@@ -215,7 +216,6 @@ public class MongoDirectory implements NosqlDirectory {
 
 	@Override
 	public MongoFile getFileHandle(String filename, boolean createIfNotFound) throws IOException {
-
 		if (nameToFileMap.containsKey(filename)) {
 			return nameToFileMap.get(filename);
 		}
@@ -300,7 +300,6 @@ public class MongoDirectory implements NosqlDirectory {
 
 	@Override
 	public void updateFileMetadata(NosqlFile nosqlFile) throws IOException {
-
 		DBCollection c = getFilesCollection();
 
 		DBObject query = new BasicDBObject();
@@ -331,9 +330,17 @@ public class MongoDirectory implements NosqlDirectory {
 
 	@Override
 	public void rename(String source, String dest) throws IOException {
-		NosqlFile nosqlFile = getFileHandle(source, false);
-		nosqlFile.setFileName(dest);
-		updateFileMetadata(nosqlFile);
+		MongoFile mongoFile = getFileHandle(source, false);
+		mongoFile.setFileName(dest);
+
+
+		updateFileMetadata(mongoFile);
+
+		nameToFileMap.remove(source);
+		nameToFileMap.put(dest, mongoFile);
+
+
+
 	}
 
 	@Override
