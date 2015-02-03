@@ -144,7 +144,8 @@ public class MongoFile implements NosqlFile {
 		return fileName;
 	}
 
-	@Override public void setFileName(String fileName) {
+	@Override
+	public void setFileName(String fileName) {
 		this.fileName = fileName;
 	}
 
@@ -171,7 +172,7 @@ public class MongoFile implements NosqlFile {
 	
 	@Override
 	public byte readByte(long position) throws IOException {
-		try {			
+		try {
 			int block = (int) (position / mongoDirectory.getBlockSize());
 			int blockOffset = (int) (position - (block * mongoDirectory.getBlockSize()));
 			

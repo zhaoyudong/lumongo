@@ -204,8 +204,6 @@ public class MongoDirectory implements NosqlDirectory {
 	@Override
 	public String[] getFileNames() throws IOException {
 
-
-
 		return nameToFileMap.keySet().toArray(new String[0]);
 	}
 
@@ -333,13 +331,10 @@ public class MongoDirectory implements NosqlDirectory {
 		MongoFile mongoFile = getFileHandle(source, false);
 		mongoFile.setFileName(dest);
 
-
 		updateFileMetadata(mongoFile);
 
 		nameToFileMap.remove(source);
 		nameToFileMap.put(dest, mongoFile);
-
-
 
 	}
 
