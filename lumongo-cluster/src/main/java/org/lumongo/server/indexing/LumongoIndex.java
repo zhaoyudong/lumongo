@@ -24,6 +24,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.UpdateOptions;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.log4j.Logger;
@@ -38,9 +41,10 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.util.Version;
+
 import org.bson.BSON;
 import org.bson.BSONObject;
+import org.bson.Document;
 import org.lumongo.LumongoConstants;
 import org.lumongo.cluster.message.Lumongo.AssociatedDocument;
 import org.lumongo.cluster.message.Lumongo.DeleteRequest;
@@ -675,9 +679,9 @@ public class LumongoIndex {
 	public void deleteIndex() throws Exception {
 
 		{
-			DB db = mongo.getDB(mongoConfig.getDatabaseName());
-			DBCollection dbCollection = db.getCollection(indexName + CONFIG_SUFFIX);
-			dbCollection.drop();
+			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
+			MongoCollection<Document> dbCollection = db.getCollection(indexName + CONFIG_SUFFIX);
+			dbCollection.dropCollection();
 		}
 		for (int i = 0; i < numberOfSegments; i++) {
 
@@ -691,7 +695,7 @@ public class LumongoIndex {
 
 		for (int i = 0; i < numberOfSegments; i++) {
 			String dbName = getIndexSegmentDbName(i);
-			DB db = mongo.getDB(dbName);
+			MongoDatabase db = mongo.getDatabase(dbName);
 			db.dropDatabase();
 		}
 
@@ -939,11 +943,15 @@ public class LumongoIndex {
 	private void storeIndexSettings() {
 		indexLock.writeLock().lock();
 		try {
-			DB db = mongo.getDB(mongoConfig.getDatabaseName());
-			DBCollection dbCollection = db.getCollection(indexConfig.getIndexName() + CONFIG_SUFFIX);
+			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
+			MongoCollection<Document> dbCollection = db.getCollection(indexConfig.getIndexName() + CONFIG_SUFFIX);
 			DBObject settings = indexConfig.toDBObject();
 			settings.put(MongoConstants.StandardFields._ID, SETTINGS_ID);
-			dbCollection.save(settings);
+
+			Document query = new Document();
+			query.put(MongoConstants.StandardFields._ID, SETTINGS_ID);
+
+			dbCollection.updateOne(query, settings, new UpdateOptions().upsert(true));
 		}
 		finally {
 			indexLock.writeLock().unlock();
@@ -1195,17 +1203,17 @@ public class LumongoIndex {
 		}
 	}
 
-	private static IndexConfig loadIndexSettings(Mongo mongo, String database, String indexName) throws InvalidIndexConfig {
-		DB db = mongo.getDB(database);
-		DBCollection dbCollection = db.getCollection(indexName + CONFIG_SUFFIX);
-		DBObject settings = dbCollection.findOne(new BasicDBObject(MongoConstants.StandardFields._ID, SETTINGS_ID));
+	private static IndexConfig loadIndexSettings(MongoClient mongo, String database, String indexName) throws InvalidIndexConfig {
+		MongoDatabase db = mongo.getDatabase(database);
+		MongoCollection<Document> dbCollection = db.getCollection(indexName + CONFIG_SUFFIX);
+		Document settings = dbCollection.find(new BasicDBObject(MongoConstants.StandardFields._ID, SETTINGS_ID)).first();
 		if (settings == null) {
 			throw new InvalidIndexConfig(indexName, "Index settings not found");
 		}
-		return IndexConfig.fromDBObject(settings);
+		return IndexConfig.fromDocument(settings);
 	}
 
-	public static LumongoIndex loadIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, Mongo mongo, ClusterConfig clusterConfig, String indexName)
+	public static LumongoIndex loadIndex(HazelcastManager hazelcastManager, MongoConfig mongoConfig, MongoClient mongo, ClusterConfig clusterConfig, String indexName)
 					throws InvalidIndexConfig, UnknownHostException, MongoException {
 		IndexConfig indexConfig = loadIndexSettings(mongo, mongoConfig.getDatabaseName(), indexName);
 		log.info("Loading index <" + indexName + ">");

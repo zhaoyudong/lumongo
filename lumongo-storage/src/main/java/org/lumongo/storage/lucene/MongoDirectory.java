@@ -2,10 +2,14 @@ package org.lumongo.storage.lucene;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.UpdateOptions;
+import org.bson.Document;
 import org.lumongo.storage.constants.MongoConstants;
 
 import com.google.common.cache.Cache;
@@ -13,11 +17,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalCause;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
-import com.mongodb.BasicDBObject;
-import com.mongodb.CommandResult;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
+
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
@@ -75,10 +75,10 @@ public class MongoDirectory implements NosqlDirectory {
 	 * @param indexName
 	 */
 	public static void dropIndex(MongoClient mongo, String dbname, String indexName) {
-		DB db = mongo.getDB(dbname);
-		db.getCollection(indexName + MongoDirectory.BLOCKS_SUFFIX).drop();
-		db.getCollection(indexName + MongoDirectory.COUNTER_SUFFIX).drop();
-		db.getCollection(indexName + MongoDirectory.FILES_SUFFIX).drop();
+		MongoDatabase db = mongo.getDatabase(dbname);
+		db.getCollection(indexName + MongoDirectory.BLOCKS_SUFFIX).dropCollection();
+		db.getCollection(indexName + MongoDirectory.COUNTER_SUFFIX).dropCollection();
+		db.getCollection(indexName + MongoDirectory.FILES_SUFFIX).dropCollection();
 	}
 
 	public static void setMaxIndexBlocks(int blocks) {
@@ -134,33 +134,30 @@ public class MongoDirectory implements NosqlDirectory {
 		this.indexName = indexName;
 		this.blockSize = blockSize;
 
-		getFilesCollection().createIndex(new BasicDBObject(FILE_NUMBER, 1));
-		getBlocksCollection().createIndex(new BasicDBObject(FILE_NUMBER, 1));
+		getFilesCollection().createIndex(new Document(FILE_NUMBER, 1));
+		getBlocksCollection().createIndex(new Document(FILE_NUMBER, 1));
 
-		DBObject indexes = new BasicDBObject();
+		Document indexes = new Document();
 		indexes.put(FILE_NUMBER, 1);
 		indexes.put(BLOCK_NUMBER, 1);
 		getBlocksCollection().createIndex(indexes);
 
 		if (sharded) {
-			String blockCollectionName = getBlocksCollection().getFullName();
-			DB db = mongo.getDB(MongoConstants.StandardDBs.ADMIN);
-			DBObject shardCommand = new BasicDBObject();
+			String blockCollectionName = getBlocksCollection().getNamespace().getFullName();
+			MongoDatabase db = mongo.getDatabase(MongoConstants.StandardDBs.ADMIN);
+			Document shardCommand = new Document();
 			shardCommand.put(MongoConstants.Commands.SHARD_COLLECTION, blockCollectionName);
 			shardCommand.put(MongoConstants.Commands.SHARD_KEY, indexes);
-			CommandResult cr = db.command(shardCommand);
-			if (cr.getErrorMessage() != null) {
-				System.err.println("Failed to shard <" + blockCollectionName + ">: " + cr.getErrorMessage());
-			}
+			db.executeCommand(shardCommand);
 		}
 
-		DBObject counter = new BasicDBObject();
+		Document counter = new Document();
 		counter.put(_ID, FILE_COUNTER);
 
-		DBCollection counterCollection = getCounterCollection();
-		if (counterCollection.findOne(counter) == null) {
+		MongoCollection<Document> counterCollection = getCounterCollection();
+		if (counterCollection.find(counter).first() != null) {
 			counter.put(COUNTER, 0);
-			counterCollection.insert(counter);
+			counterCollection.insertOne(counter);
 		}
 
 		nameToFileMap = new ConcurrentHashMap<String, MongoFile>();
@@ -173,31 +170,31 @@ public class MongoDirectory implements NosqlDirectory {
 	}
 
 	private void fetchInitialContents() throws MongoException, IOException {
-		DBCollection c = getFilesCollection();
-		DBObject query = new BasicDBObject();
+		MongoCollection<Document> c = getFilesCollection();
+		Document query = new Document();
 
-		DBCursor cur = c.find(query);
-		while (cur.hasNext()) {
-			MongoFile mf = loadFileFromDBObject(cur.next());
+		FindIterable<Document> cur = c.find(query);
+		for (Document d : cur) {
+			MongoFile mf = loadFileFromDBObject(d);
 			nameToFileMap.put(mf.getFileName(), mf);
 		}
 	}
 
-	public DBCollection getCounterCollection() {
-		DB db = mongo.getDB(dbname);
-		DBCollection c = db.getCollection(indexName + COUNTER_SUFFIX);
+	public MongoCollection<Document> getCounterCollection() {
+		MongoDatabase db = mongo.getDatabase(dbname);
+		MongoCollection<Document> c = db.getCollection(indexName + COUNTER_SUFFIX);
 		return c;
 	}
 
-	public DBCollection getFilesCollection() {
-		DB db = mongo.getDB(dbname);
-		DBCollection c = db.getCollection(indexName + FILES_SUFFIX);
+	public MongoCollection<Document> getFilesCollection() {
+		MongoDatabase db = mongo.getDatabase(dbname);
+		MongoCollection<Document> c = db.getCollection(indexName + FILES_SUFFIX);
 		return c;
 	}
 
-	public DBCollection getBlocksCollection() {
-		DB db = mongo.getDB(dbname);
-		DBCollection c = db.getCollection(indexName + BLOCKS_SUFFIX);
+	public MongoCollection<Document> getBlocksCollection() {
+		MongoDatabase db = mongo.getDatabase(dbname);
+		MongoCollection<Document> c = db.getCollection(indexName + BLOCKS_SUFFIX);
 		return c;
 	}
 
@@ -218,14 +215,14 @@ public class MongoDirectory implements NosqlDirectory {
 			return nameToFileMap.get(filename);
 		}
 
-		DBCollection c = getFilesCollection();
+		MongoCollection<Document> c = getFilesCollection();
 
-		DBObject query = new BasicDBObject();
+		Document query = new Document();
 		query.put(FILE_NAME, filename);
-		DBCursor cur = c.find(query);
+		Document doc = c.find(query).first();
 
-		if (cur.hasNext()) {
-			return loadFileFromDBObject(cur.next());
+		if (doc != null) {
+			return loadFileFromDBObject(doc);
 		}
 		else if (createIfNotFound) {
 			return createFile(filename);
@@ -236,14 +233,14 @@ public class MongoDirectory implements NosqlDirectory {
 	}
 
 	private int getNewFileNumber() {
-		DBCollection counterCollection = getCounterCollection();
-		DBObject query = new BasicDBObject();
+		MongoCollection<Document> counterCollection = getCounterCollection();
+		Document query = new Document();
 		query.put(_ID, FILE_COUNTER);
-		DBObject update = new BasicDBObject();
-		DBObject increment = new BasicDBObject();
+		Document update = new Document();
+		Document increment = new Document();
 		increment.put(COUNTER, 1);
 		update.put($INC, increment);
-		DBObject result = counterCollection.findAndModify(query, update);
+		Document result = counterCollection.findOneAndUpdate(query, update);
 		int count = (int) result.get(COUNTER);
 		return count;
 	}
@@ -255,36 +252,36 @@ public class MongoDirectory implements NosqlDirectory {
 		return nameToFileMap.get(mongoFile.getFileName());
 	}
 
-	private MongoFile loadFileFromDBObject(DBObject dbObject) throws IOException {
-		MongoFile mongoFile = fromDbObject(dbObject);
+	private MongoFile loadFileFromDBObject(Document document) throws IOException {
+		MongoFile mongoFile = fromDocument(document);
 		nameToFileMap.putIfAbsent(mongoFile.getFileName(), mongoFile);
 		return nameToFileMap.get(mongoFile.getFileName());
 	}
 
-	public MongoFile fromDbObject(DBObject dbObject) throws IOException {
+	public MongoFile fromDocument(Document document) throws IOException {
 		try {
-			MongoFile mongoFile = new MongoFile(this, (String) dbObject.get(FILE_NAME), (int) dbObject.get(FILE_NUMBER), (int) dbObject.get(BLOCK_SIZE),
-							(boolean) dbObject.get(COMPRESSED));
-			mongoFile.setFileLength((long) dbObject.get(LENGTH));
-			mongoFile.setLastModified((long) dbObject.get(LAST_MODIFIED));
+			MongoFile mongoFile = new MongoFile(this, (String) document.get(FILE_NAME), (int) document.get(FILE_NUMBER), (int) document.get(BLOCK_SIZE),
+							(boolean) document.get(COMPRESSED));
+			mongoFile.setFileLength((long) document.get(LENGTH));
+			mongoFile.setLastModified((long) document.get(LAST_MODIFIED));
 			return mongoFile;
 		}
 		catch (Exception e) {
-			throw new IOException("Unable to de-serialize file descriptor from: <" + dbObject + ">: ", e);
+			throw new IOException("Unable to de-serialize file descriptor from: <" + document + ">: ", e);
 
 		}
 	}
 
-	public static DBObject toDbObject(NosqlFile nosqlFile) throws IOException {
+	public static Document toDocument(NosqlFile nosqlFile) throws IOException {
 		try {
-			DBObject dbObject = new BasicDBObject();
-			dbObject.put(FILE_NUMBER, nosqlFile.getFileNumber());
-			dbObject.put(FILE_NAME, nosqlFile.getFileName());
-			dbObject.put(LENGTH, nosqlFile.getFileLength());
-			dbObject.put(LAST_MODIFIED, nosqlFile.getLastModified());
-			dbObject.put(BLOCK_SIZE, nosqlFile.getBlockSize());
-			dbObject.put(COMPRESSED, nosqlFile.isCompressed());
-			return dbObject;
+			Document document = new Document();
+			document.put(FILE_NUMBER, nosqlFile.getFileNumber());
+			document.put(FILE_NAME, nosqlFile.getFileName());
+			document.put(LENGTH, nosqlFile.getFileLength());
+			document.put(LAST_MODIFIED, nosqlFile.getLastModified());
+			document.put(BLOCK_SIZE, nosqlFile.getBlockSize());
+			document.put(COMPRESSED, nosqlFile.isCompressed());
+			return document;
 		}
 		catch (Exception e) {
 			throw new IOException("Unable to serialize file descriptor for " + nosqlFile.getFileName(), e);
@@ -298,26 +295,26 @@ public class MongoDirectory implements NosqlDirectory {
 
 	@Override
 	public void updateFileMetadata(NosqlFile nosqlFile) throws IOException {
-		DBCollection c = getFilesCollection();
+		MongoCollection<Document> c = getFilesCollection();
 
-		DBObject query = new BasicDBObject();
+		Document query = new Document();
 		query.put(FILE_NUMBER, nosqlFile.getFileNumber());
 
-		DBObject object = toDbObject(nosqlFile);
-		c.update(query, object, true, false);
+		Document object = toDocument(nosqlFile);
+		c.updateOne(query, object, new UpdateOptions().upsert(true));
 
 	}
 
 	@Override
 	public void deleteFile(NosqlFile nosqlFile) throws IOException {
-		DBCollection c = getFilesCollection();
+		MongoCollection<Document> c = getFilesCollection();
 
-		DBObject query = new BasicDBObject();
+		Document query = new Document();
 		query.put(FILE_NUMBER, nosqlFile.getFileNumber());
-		c.remove(query);
+		c.deleteMany(query);
 
-		DBCollection b = getBlocksCollection();
-		b.remove(query);
+		MongoCollection<Document> b = getBlocksCollection();
+		b.deleteMany(query);
 		nameToFileMap.remove(nosqlFile.getFileName());
 	}
 

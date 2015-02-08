@@ -2,6 +2,12 @@ package org.lumongo.util;
 
 import java.net.UnknownHostException;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.CreateIndexOptions;
+import com.mongodb.client.model.UpdateOptions;
+import org.apache.lucene.index.IndexOptions;
+import org.bson.Document;
 import org.lumongo.server.config.ClusterConfig;
 import org.lumongo.server.config.LocalNodeConfig;
 import org.lumongo.server.config.MongoConfig;
@@ -102,29 +108,27 @@ public class ClusterHelper {
 		
 		try {
 			
-			DB db = mongo.getDB(mongoConfig.getDatabaseName());
+			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
 			
-			DBCollection membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
+			MongoCollection<Document> membershipCollection = db.getCollection(CLUSTER_MEMBERSHIP);
 			
-			DBObject index = new BasicDBObject();
+			Document index = new Document();
 			index.put(SERVER_ADDRESS, 1);
 			index.put(INSTANCE, 1);
 			
-			DBObject options = new BasicDBObject();
-			options.put("unique", true);
-			
+			CreateIndexOptions options = new CreateIndexOptions().unique(true);
 			membershipCollection.createIndex(index, options);
 			
-			BasicDBObject search = new BasicDBObject();
+			Document search = new Document();
 			search.put(SERVER_ADDRESS, serverAddress);
 			search.put(INSTANCE, localNodeConfig.getHazelcastPort());
 			
-			BasicDBObject object = new BasicDBObject();
+			Document object = new Document();
 			object.put(SERVER_ADDRESS, serverAddress);
 			object.put(INSTANCE, localNodeConfig.getHazelcastPort());
 			object.put(DATA, localNodeConfig.toDBObject());
 			
-			membershipCollection.update(search, object, true, false, WriteConcern.SAFE);
+			membershipCollection.updateMany(search, object, new UpdateOptions().upsert(true));
 		}
 		finally {
 			mongo.close();

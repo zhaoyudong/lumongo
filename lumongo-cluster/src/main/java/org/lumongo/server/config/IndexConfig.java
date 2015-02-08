@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.TreeMap;
 
+import org.bson.Document;
 import org.lumongo.cluster.message.Lumongo.FacetAs;
 import org.lumongo.cluster.message.Lumongo.FacetAs.LMFacetType;
 import org.lumongo.cluster.message.Lumongo.FieldConfig;
@@ -272,7 +273,7 @@ public class IndexConfig {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static IndexConfig fromDBObject(DBObject settings) {
+	public static IndexConfig fromDocument(Document settings) {
 		IndexConfig indexConfig = new IndexConfig();
 		indexConfig.defaultSearchField = (String) settings.get(DEFAULT_SEARCH_FIELD);
 		indexConfig.applyUncommitedDeletes = (boolean) settings.get(APPLY_UNCOMMITED_DELETES);
@@ -295,7 +296,7 @@ public class IndexConfig {
 		
 		indexConfig.fieldConfigMap = new TreeMap<String, FieldConfig>();
 		
-		if (settings.containsField(SEGMENT_FLUSH_INTERVAL)) {
+		if (settings.containsKey(SEGMENT_FLUSH_INTERVAL)) {
 			indexConfig.segmentFlushInterval = (int) settings.get(SEGMENT_FLUSH_INTERVAL);
 		}
 		else {

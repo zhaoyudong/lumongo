@@ -10,6 +10,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.CRC32;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.UpdateOptions;
+import org.bson.Document;
 import org.lumongo.util.Compression;
 import org.lumongo.util.Compression.CompressionLevel;
 
@@ -20,9 +23,6 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalCause;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
 
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements. See the NOTICE
@@ -305,13 +305,13 @@ public class MongoFile implements NosqlFile {
 	
 	private MongoBlock getBlock(Integer blockNumber, boolean createIfNotExist) throws IOException {
 		
-		DBCollection c = mongoDirectory.getBlocksCollection();
+		MongoCollection<Document> c = mongoDirectory.getBlocksCollection();
 		
-		DBObject query = new BasicDBObject();
+		Document query = new Document();
 		query.put(MongoDirectory.FILE_NUMBER, fileNumber);
 		query.put(MongoDirectory.BLOCK_NUMBER, blockNumber);
 		
-		DBObject result = c.findOne(query);
+		Document result = c.find(query).first();
 		
 		byte[] bytes = null;
 		if (result != null) {
@@ -338,13 +338,13 @@ public class MongoFile implements NosqlFile {
 	public void storeBlock(MongoBlock mongoBlock) {
 		// System.out.println("Store: " + mongoBlock.getBlockNumber());
 		
-		DBCollection c = mongoDirectory.getBlocksCollection();
+		MongoCollection<Document> c = mongoDirectory.getBlocksCollection();
 		
-		DBObject query = new BasicDBObject();
+		Document query = new Document();
 		query.put(MongoDirectory.FILE_NUMBER, fileNumber);
 		query.put(MongoDirectory.BLOCK_NUMBER, mongoBlock.blockNumber);
 		
-		DBObject object = new BasicDBObject();
+		Document object = new Document();
 		object.put(MongoDirectory.FILE_NUMBER, fileNumber);
 		object.put(MongoDirectory.BLOCK_NUMBER, mongoBlock.blockNumber);
 		byte[] orgBytes = mongoBlock.bytes;
@@ -369,7 +369,7 @@ public class MongoFile implements NosqlFile {
 		object.put(MongoDirectory.BYTES, newBytes);
 		object.put(MongoDirectory.COMPRESSED, blockCompressed);
 		
-		c.update(query, object, true, false);
+		c.updateOne(query, object, new UpdateOptions().upsert(true));
 		mongoBlock.dirty = false;
 		
 	}

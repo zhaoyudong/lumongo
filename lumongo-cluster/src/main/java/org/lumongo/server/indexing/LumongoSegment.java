@@ -30,6 +30,8 @@ import org.apache.lucene.facet.Facets;
 import org.apache.lucene.facet.FacetsCollector;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.facet.LabelAndValue;
+import org.apache.lucene.facet.range.LongRange;
+import org.apache.lucene.facet.range.LongRangeFacetCounts;
 import org.apache.lucene.facet.taxonomy.FastTaxonomyFacetCounts;
 import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyReader;
 import org.apache.lucene.facet.taxonomy.directory.LumongoDirectoryTaxonomyWriter;
@@ -271,7 +273,13 @@ public class LumongoSegment {
 
 				}
 				else {
+
 					FacetsCollector fc = new FacetsCollector();
+					LongRangeFacetCounts lrfc = new LongRangeFacetCounts("someField",fc, new LongRange("less than or equal to 10", 0L, true, 10L, true),
+									new LongRange("over 90", 90L, false, 100L, false),
+									new LongRange("90 or above", 90L, true, 100L, false),
+									new LongRange("over 1000", 1000L, false, Long.MAX_VALUE, false));
+
 					is.search(q, MultiCollector.wrap(collector, fc));
 					Facets facets = new FastTaxonomyFacetCounts(taxonomyReader, facetsConfig, fc);
 					for (CountRequest countRequest : facetRequest.getCountRequestList()) {
