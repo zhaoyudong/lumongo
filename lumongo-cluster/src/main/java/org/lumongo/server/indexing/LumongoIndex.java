@@ -945,13 +945,13 @@ public class LumongoIndex {
 		try {
 			MongoDatabase db = mongo.getDatabase(mongoConfig.getDatabaseName());
 			MongoCollection<Document> dbCollection = db.getCollection(indexConfig.getIndexName() + CONFIG_SUFFIX);
-			DBObject settings = indexConfig.toDBObject();
+			Document settings = indexConfig.toDocument();
 			settings.put(MongoConstants.StandardFields._ID, SETTINGS_ID);
 
 			Document query = new Document();
 			query.put(MongoConstants.StandardFields._ID, SETTINGS_ID);
 
-			dbCollection.updateOne(query, settings, new UpdateOptions().upsert(true));
+			dbCollection.replaceOne(query, settings, new UpdateOptions().upsert(true));
 		}
 		finally {
 			indexLock.writeLock().unlock();

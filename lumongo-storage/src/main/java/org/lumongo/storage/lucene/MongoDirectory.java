@@ -234,14 +234,18 @@ public class MongoDirectory implements NosqlDirectory {
 
 	private int getNewFileNumber() {
 		MongoCollection<Document> counterCollection = getCounterCollection();
+
 		Document query = new Document();
 		query.put(_ID, FILE_COUNTER);
+
 		Document update = new Document();
 		Document increment = new Document();
 		increment.put(COUNTER, 1);
 		update.put($INC, increment);
+
 		Document result = counterCollection.findOneAndUpdate(query, update);
 		int count = (int) result.get(COUNTER);
+
 		return count;
 	}
 

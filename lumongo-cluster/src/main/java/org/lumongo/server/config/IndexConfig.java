@@ -221,8 +221,8 @@ public class IndexConfig {
 		return segmentQueryCacheMaxAmount;
 	}
 	
-	public DBObject toDBObject() {
-		DBObject dbObject = new BasicDBObject();
+	public Document toDocument() {
+		Document dbObject = new Document();
 		dbObject.put(DEFAULT_SEARCH_FIELD, defaultSearchField);
 		dbObject.put(APPLY_UNCOMMITED_DELETES, applyUncommitedDeletes);
 		dbObject.put(REQUEST_FACTOR, requestFactor);
@@ -238,14 +238,14 @@ public class IndexConfig {
 		dbObject.put(SEGMENT_QUERY_CACHE_SIZE, segmentQueryCacheSize);
 		dbObject.put(SEGMENT_QUERY_CACHE_MAX_AMOUNT, segmentQueryCacheMaxAmount);
 		
-		List<DBObject> fieldConfigs = new ArrayList<DBObject>();
+		List<Document> fieldConfigs = new ArrayList<Document>();
 		for (FieldConfig fc : fieldConfigMap.values()) {
-			BasicDBObject fieldConfig = new BasicDBObject();
+			Document fieldConfig = new Document();
 			fieldConfig.put(STORED_FIELD_NAME, fc.getStoredFieldName());
 			{
-				List<DBObject> indexAsObjList = new ArrayList<DBObject>();
+				List<Document> indexAsObjList = new ArrayList<Document>();
 				for (IndexAs indexAs : fc.getIndexAsList()) {
-					DBObject indexAsObj = new BasicDBObject();
+					Document indexAsObj = new Document();
 					indexAsObj.put(ANALYZER, indexAs.getAnalyzer().name());
 					indexAsObj.put(INDEXED_FIELD_NAME, indexAs.getIndexFieldName());
 					indexAsObjList.add(indexAsObj);
@@ -253,9 +253,9 @@ public class IndexConfig {
 				fieldConfig.put(INDEX_AS, indexAsObjList);
 			}
 			{
-				List<DBObject> facetAsObjList = new ArrayList<DBObject>();
+				List<Document> facetAsObjList = new ArrayList<Document>();
 				for (FacetAs facetAs : fc.getFacetAsList()) {
-					DBObject facetAsObj = new BasicDBObject();
+					Document facetAsObj = new Document();
 					facetAsObj.put(FACET_TYPE, facetAs.getFacetType().name());
 					facetAsObj.put(FACET_NAME, facetAs.getFacetName());
 					facetAsObjList.add(facetAsObj);
@@ -304,16 +304,16 @@ public class IndexConfig {
 			indexConfig.segmentFlushInterval = (indexConfig.segmentCommitInterval / 2);
 		}
 		
-		List<DBObject> fieldConfigs = (List<DBObject>) settings.get(FIELD_CONFIGS);
-		for (DBObject fieldConfig : fieldConfigs) {
+		List<Document> fieldConfigs = (List<Document>) settings.get(FIELD_CONFIGS);
+		for (Document fieldConfig : fieldConfigs) {
 			
 			FieldConfig.Builder fcBuilder = FieldConfig.newBuilder();
 			String storedFieldName = (String) fieldConfig.get(STORED_FIELD_NAME);
 			fcBuilder.setStoredFieldName(storedFieldName);
 			
 			{
-				List<DBObject> indexAsObjList = (List<DBObject>) fieldConfig.get(INDEX_AS);
-				for (DBObject indexAsObj : indexAsObjList) {
+				List<Document> indexAsObjList = (List<Document>) fieldConfig.get(INDEX_AS);
+				for (Document indexAsObj : indexAsObjList) {
 					LMAnalyzer analyzer = LMAnalyzer.valueOf((String) indexAsObj.get(ANALYZER));
 					String indexFieldName = (String) indexAsObj.get(INDEXED_FIELD_NAME);
 					fcBuilder.addIndexAs(IndexAs.newBuilder().setAnalyzer(analyzer).setIndexFieldName(indexFieldName));
@@ -321,8 +321,8 @@ public class IndexConfig {
 			}
 			{
 				
-				List<DBObject> facetAsObjList = (List<DBObject>) fieldConfig.get(FACET_AS);
-				for (DBObject facetAsObj : facetAsObjList) {
+				List<Document> facetAsObjList = (List<Document>) fieldConfig.get(FACET_AS);
+				for (Document facetAsObj : facetAsObjList) {
 					LMFacetType facetType = LMFacetType.valueOf((String) facetAsObj.get(FACET_TYPE));
 					String facetName = (String) facetAsObj.get(FACET_NAME);
 					fcBuilder.addFacetAs(FacetAs.newBuilder().setFacetType(facetType).setFacetName(facetName));
